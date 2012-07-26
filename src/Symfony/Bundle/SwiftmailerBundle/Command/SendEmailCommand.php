@@ -82,7 +82,7 @@ EOF
 		$settingDQL = "SELECT s FROM ZenithSalonEntityBundle:Setting s " .
 				" JOIN s.store store " .
 				" WHERE store.id = :storeId AND s.isDeleted = FALSE " .
-				" AND (s.settingName = 'SMTP' OR s.settingName = 'Email' OR s.settingName = 'Password' OR s.settingName = 'EmailAuthType')";
+				" AND (s.settingName = 'PromSMTP' OR s.settingName = 'PromEmail' OR s.settingName = 'PromPassword' OR s.settingName = 'PromEmailAuthType')";
 		
 		$settings = $em->createQuery($settingDQL)->setParameter(//array(
 				'storeId', $store->getId()
@@ -97,16 +97,16 @@ EOF
 		{
 			switch ($setting->getSettingName())
 			{
-				case 'SMTP':
+				case 'PromSMTP':
 					$storeSMTP = $setting->getStringValue();
 					break;
-				case 'Email': //full email
+				case 'PromEmail': //full email
 					$storeEmail = $setting->getStringValue();
 					break;
-				case 'Password':
+				case 'PromPassword':
 					$storeEmailPass = $setting->getStringValue();
 					break;
-				case "EmailAuthType":
+				case "PromEmailAuthType":
 					$encrypt = strtolower($setting->getStringValue());
 					break;
 				default:
