@@ -17,6 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 
 use Symfony\Component\Console\Input\InputArgument;
+use Zenith\POSBundle\Services\ZenithMailer;
 
 /**
  * Send Emails from the spool.
@@ -58,10 +59,11 @@ EOF
         $storeId = $input->getArgument('storeId');
         $doctrine = $this->getContainer()->get('doctrine');
         $em = $this->getContainer()->get('doctrine.orm.entity_manager');	
-		
+        $store = null;
+
         if (!is_numeric($storeId))
 		{
-			$output->writeln("ERROR: Store ID must be an integer.");
+			$output->writeln("ERROR: Store ID must be an integer. (0 == corporate)");
 			$output->writeln("Function now terminates...");
 			exit();
 		}
@@ -70,74 +72,18 @@ EOF
 			//Getting store
 			$store = $doctrine->getRepository('ZenithSalonEntityBundle:Store')->findOneById($storeId);
 			
-			if ($store == null)
+			if ($store == null && $storeId != 0)
 			{
 				$output->writeln("ERROR: Store with given ID Does Not Exist.");
 				$output->writeln("Function now terminates...");
 				exit();
 			}
 		}
-		
-		//Getting Store setting
-		$settingDQL = "SELECT s FROM ZenithSalonEntityBundle:Setting s " .
-				" JOIN s.store store " .
-				" WHERE store.id = :storeId AND s.isDeleted = FALSE " .
-				" AND (s.settingName = 'PromSMTP' OR s.settingName = 'PromEmail' OR s.settingName = 'PromPassword' OR s.settingName = 'PromEmailAuthType')";
-		
-		$settings = $em->createQuery($settingDQL)->setParameter(//array(
-				'storeId', $store->getId()
-		)->getResult();
-		
-		$storeEmail = null;
-		$storeEmailPass = null;
-		$encrypt = null;
-		$storeSMTP = null;
-		
-		foreach ($settings as $setting)
-		{
-			switch ($setting->getSettingName())
-			{
-				case 'PromSMTP':
-					$storeSMTP = $setting->getStringValue();
-					break;
-				case 'PromEmail': //full email
-					$storeEmail = $setting->getStringValue();
-					break;
-				case 'PromPassword':
-					$storeEmailPass = $setting->getStringValue();
-					break;
-				case "PromEmailAuthType":
-					$encrypt = strtolower($setting->getStringValue());
-					break;
-				default:
-					break;
-			}
-		}
-		
-		if ($storeEmail == null || $storeSMTP == null || $storeEmailPass == null)
-		{
-			$output->writeln("ERROR: Mailing System Has NOT Been Set Up Yet.");
-			$output->writeln("Function now terminates ...");
-			exit();
-		}
-		
-		 $spoolPath = "web/spool/" . $storeEmail; //This MUST be the same as the one specified in the MailSpooler class!
+
+        $store_suffix = ($store == null) ? 'corp' : $store->getId();
+
+        $spoolPath = "web/spool/store_" . $store_suffix; //This MUST be the same as the one specified in the MailSpooler class!
       
-        //Creating transport
-		if ($encrypt)
-		{
-			$transport = \Swift_SmtpTransport::newInstance($storeSMTP) 
-							->setUsername($storeEmail)
-							->setPassword($storeEmailPass)
-							->setEncryption($encrypt);
-		}
-		else
-		{
-			$transport = \Swift_SmtpTransport::newInstance($storeSMTP)
-							->setUsername($storeEmail)
-							->setPassword($storeEmailPass);
-		}
-		
         $spool = new \Swift_FileSpool($spoolPath);        
         
         //Setting max # of msgs sent and time limit
@@ -146,8 +92,11 @@ EOF
             $spool->setMessageLimit($input->getOption('message-limit'));
             $spool->setTimeLimit($input->getOption('time-limit'));
         }
+
+        $zenithMailer = $this->getContainer()->get('zenith_mailer');
+        $mailer = $zenithMailer->getMailer(ZenithMailer::TransportImmediate, $store);
         
-        $sent = $spool->flushQueue($transport);
+        $sent = $spool->flushQueue($mailer->getTransport());
         $output->writeln(sprintf('sent %s emails', $sent));
     }
 }
