@@ -64,8 +64,12 @@ class SwiftmailerExtension extends Extension
         if ('smtp' === $transport) {
             $loader->load('smtp.xml');
         }
+        
+        if ('aws' === $transport) {
+        	$loader->load('aws.xml');
+        }
 
-        if (in_array($transport, array('smtp', 'mail', 'sendmail', 'null'))) {
+        if (in_array($transport, array('smtp', 'aws', 'mail', 'sendmail', 'null'))) {
             // built-in transport
             $transport = 'swiftmailer.transport.'.$transport;
         }
@@ -78,6 +82,10 @@ class SwiftmailerExtension extends Extension
 
         foreach (array('encryption', 'port', 'host', 'username', 'password', 'auth_mode') as $key) {
             $container->setParameter('swiftmailer.transport.smtp.'.$key, $config[$key]);
+        }
+        
+        foreach (array('key', 'secret', 'endpoint',) as $key) {
+        	$container->setParameter('swiftmailer.transport.aws.'.$key, $config[$key]);
         }
 
         // spool?

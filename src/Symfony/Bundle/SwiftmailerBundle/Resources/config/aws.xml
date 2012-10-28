@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <parameter key="swiftmailer.transport.aws.class">Swift_AWSTransport</parameter>
+    </parameters>
+
+    <services>
+        <service id="swiftmailer.transport.aws" class="%swiftmailer.transport.aws.class%" public="false">
+            <argument type="service" id="swiftmailer.transport.buffer" />
+            <argument type="collection">
+                <argument type="service" id="swiftmailer.transport.authhandler" />
+            </argument>
+            <argument type="service" id="swiftmailer.transport.eventdispatcher" />
+
+            <call method="setAccessKeyId"><argument>%swiftmailer.transport.aws.key%</argument></call>
+            <call method="setSecretKey"><argument>%swiftmailer.transport.aws.secret%</argument></call>
+            <call method="setEndpoint"><argument>%swiftmailer.transport.aws.endpoint%</argument></call>
+        </service>
+    </services>
+</container>

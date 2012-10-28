@@ -50,15 +50,12 @@ EOF
         ;
     }
 
-    /**
-     * Last modified: 7/20/12
-     * {@inheritdoc}
-     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $storeId = $input->getArgument('storeId');
         $doctrine = $this->getContainer()->get('doctrine');
-        $em = $this->getContainer()->get('doctrine.orm.entity_manager');	
+        $em = $this->getContainer()->get('doctrine.orm.entity_manager');
+        $eventRepo = $doctrine->getRepository('ZenithSalonEntityBundle:MailEvent');	
         $store = null;
 
         if (!is_numeric($storeId))
@@ -96,7 +93,16 @@ EOF
         $zenithMailer = $this->getContainer()->get('zenith_mailer');
         $mailer = $zenithMailer->getMailer(ZenithMailer::TransportImmediate, $store);
         
-        $sent = $spool->flushQueue($mailer->getTransport());
-        $output->writeln(sprintf('sent %s emails', $sent));
+        $response = $spool->flushQueue($mailer->getTransport());
+        //here we will have an array in format array(eventId => messageId), loop through it and update the event records
+		//error_log(print_r($response, true));
+		foreach ($response as $eventId => $mail) {
+			if ($mail['success']) {
+				$event = $eventRepo->findOneById($eventId);
+				$event->setMessageId($mail['messageIds'][0]);
+				$em->persist($event);
+			}
+		}
+		$em->flush(); 
     }
 }
