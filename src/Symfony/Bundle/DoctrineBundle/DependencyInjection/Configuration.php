@@ -95,7 +95,9 @@ class Configuration implements ConfigurationInterface
 
     private function getDbalConnectionsNode()
     {
+        $treeBuilder = new TreeBuilder();
         $node = $treeBuilder->root('connections');
+
         /** @var $connectionNode ArrayNodeDefinition */
         $connectionNode = $node
             ->requiresAtLeastOneElement()
@@ -153,15 +155,14 @@ class Configuration implements ConfigurationInterface
             ->scalarNode('charset')->end()
             ->scalarNode('path')->end()
             ->booleanNode('memory')->end()
-            ->scalarNode('unix_socket')->setInfo('The unix socket to use for MySQL')->end()
-            ->booleanNode('persistent')->setInfo('True to use as persistent connection for the ibm_db2 driver')->end()
-            ->scalarNode('protocol')->setInfo('The protocol to use for the ibm_db2 driver (default to TCPIP if ommited)')->end()
-            ->booleanNode('service')->setInfo('True to use dbname as service name instead of SID for Oracle')->end()
+            ->scalarNode('unix_socket')->end()
+            ->booleanNode('persistent')->end()
+            ->scalarNode('protocol')->end()
+            ->booleanNode('service')->end()
             ->scalarNode('sessionMode')
-            ->setInfo('The session mode to use for the oci8 driver')
             ->end()
-            ->booleanNode('pooled')->setInfo('True to use a pooled server with the oci8 driver')->end()
-            ->booleanNode('MultipleActiveResultSets')->setInfo('Configuring MultipleActiveResultSets for the pdo_sqlsrv driver')->end()
+            ->booleanNode('pooled')->end()
+            ->booleanNode('MultipleActiveResultSets')->end()
             ->end()
             ->beforeNormalization()
             ->ifTrue(function($v) {return !isset($v['sessionMode']) && isset($v['session_mode']);})
